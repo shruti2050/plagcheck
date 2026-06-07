@@ -1,243 +1,278 @@
-# PlagCheck  — Free Plagiarism Checker (100,000+ Words)
+# PlagCheck 🔍
 
-A production-ready plagiarism detection platform powered entirely by **local open-source AI**.
-Zero API costs. No data sent to third parties. Scales to 200,000+ words per document.
+> Free, local plagiarism checker for students — no signup, no limits, no data stored.
+
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)
+![React](https://img.shields.io/badge/React-18-61DAFB)
+![Ollama](https://img.shields.io/badge/Ollama-local%20LLM-black)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
+---
+
+## Why I built this
+
+Turnitin charges per check. Grammarly is paywalled. Every free tool caps at 1,000 words.
+
+My final year project was 12,000 words. I just needed to know if my work was original.
+
+So I built PlagCheck — a plagiarism checker that runs entirely on your machine, costs nothing, and supports up to **200,000 words**.
+
+---
+
+## What it does
+
+- ✅ Checks up to **200,000 words** — full dissertations, theses, research papers
+- ✅ **No signup. No credit card. No word limit.**
+- ✅ Real-time analysis with live progress updates
+- ✅ Source detection, flagged passages, and actionable recommendations
+- ✅ Upload `.txt`, `.pdf`, or `.docx` directly
+- ✅ Powered by a **local LLM (Ollama + Gemma2)** — your text never leaves your machine
+- ✅ Falls back to heuristic analysis if Ollama is unavailable
+
+---
+
+## Privacy
+
+```
+Your text → analyzed in memory → result returned → everything discarded
+```
+
+Nothing is saved. No database. No file storage. No user accounts.  
+Pull the repo, run it locally, use it — your data stays yours.
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        PlagCheck                            │
-├──────────────────────┬──────────────────────────────────────┤
-│   React Frontend     │        FastAPI Backend               │
-│   (Vite + React 18)  │        (Python 3.11)                │
-│                      │                                      │
-│  • Editor with drag  │  • SSE streaming progress           │
-│    & drop upload     │  • MinHash fingerprinting           │
-│  • Real-time SSE     │  • Chunked LLM analysis             │
-│    progress stream   │  • SQLite persistence               │
-│  • History & export  │  • File upload (.txt/.pdf/.docx)    │
-└──────────────────────┴──────────┬───────────────────────────┘
-                                  │
-                    ┌─────────────▼─────────────┐
-                    │    Ollama (Local LLM)       │
-                    │  mistral / llama3 / gemma2  │
-                    │  Runs 100% on your machine  │
-                    └─────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│                      PlagCheck                        │
+├─────────────────────┬────────────────────────────────┤
+│   React Frontend    │       FastAPI Backend           │
+│   (Vite + React 18) │       (Python 3.11)            │
+│                     │                                 │
+│  • Paste or upload  │  • SSE streaming progress      │
+│    text/file        │  • MinHash fingerprinting      │
+│  • Live progress    │  • Chunked LLM analysis        │
+│    stream           │  • Heuristic fallback          │
+│  • Originality      │  • File reading                │
+│    report           │    (.txt / .pdf / .docx)       │
+└─────────────────────┴──────────┬───────────────────--┘
+                                 │
+                   ┌─────────────▼──────────────┐
+                   │     Ollama (Local LLM)      │
+                   │  gemma2:2b — runs on YOUR   │
+                   │  machine, zero API cost     │
+                   └────────────────────────────-┘
 ```
 
-## How It Handles 100,000+ Words (For Free)
+---
+
+## How it handles 200,000 words for free
 
 ### Stage 1 — MinHash Fingerprinting (instant)
-- Computes 128-hash MinHash signature of the full document
+- Computes a 128-hash MinHash signature of the full document
 - Shingles text into 5-word n-grams
-- Jaccard similarity comparison against stored documents
+- Jaccard similarity for fast pattern matching
 - Zero LLM cost — pure math
 
 ### Stage 2 — Chunked LLM Analysis
 - Splits document into 2,000-word overlapping chunks (10% overlap)
-- Sends each chunk to the local Ollama model
-- 100k words = ~50 chunks, processed sequentially
+- Sends each chunk to your local Ollama model
+- 100k words ≈ 50 chunks, processed sequentially
 - No per-token billing — completely free
 
 ### Stage 3 — Heuristic Fallback
-- If Ollama is unavailable, falls back to statistical analysis:
-  - Bigram repetition scoring
-  - Vocabulary richness (unique word ratio)
-  - Sentence length variance
-  - Formal language clustering
+If Ollama is unavailable, automatically falls back to:
+- Bigram repetition scoring
+- Vocabulary richness (Type-Token Ratio)
+- Sentence length variance
+- Formal language clustering
 
 ### Stage 4 — Score Aggregation
 - Weighted average across all chunks
-- Proportional contribution by chunk word count
 - Generates sources, flagged passages, and recommendations
 
 ---
 
 ## Quick Start
 
-### Option A — Docker (Recommended)
+### Prerequisites
+- [Ollama](https://ollama.ai/download) installed and running
+- `gemma2:2b` model pulled (or any model you prefer)
+- Python 3.11+
+- Node.js 18+
 
+### Step 1 — Pull a model (one time only)
 ```bash
-# Clone / download the project
-cd plagcheck-saas
-
-# Start everything (downloads Ollama + Mistral automatically)
-docker compose up -d
-
-# Wait ~2 minutes for model to download, then open:
-open http://localhost:3000
+ollama pull gemma2:2b
 ```
 
-### Option B — Manual Setup
-
-#### 1. Install Ollama
+### Step 2 — Start Ollama
 ```bash
-# macOS / Linux
-curl -fsSL https://ollama.ai/install.sh | sh
-
-# Windows: download from https://ollama.ai/download
+ollama serve
 ```
 
-#### 2. Pull a free model
-```bash
-ollama pull mistral      # 4.1GB — recommended
-# or
-ollama pull llama3       # 4.7GB — best quality
-# or
-ollama pull phi3         # 2.3GB — fastest, smallest
-```
-
-#### 3. Start the backend
+### Step 3 — Start the backend
 ```bash
 cd backend
 pip install -r requirements.txt
-cp ../.env.example .env
 uvicorn main:app --reload --port 8000
 ```
 
-#### 4. Start the frontend
+### Step 4 — Start the frontend
 ```bash
 cd frontend
 npm install
 npm run dev
-# Opens at http://localhost:3000
+```
+
+### Step 5 — Open in browser
+```
+http://localhost:3000
 ```
 
 ---
 
-## API Reference
+## Docker (optional)
 
-### POST `/api/check/stream` — SSE Streaming Check
+If you have Docker installed, one command starts everything:
+
+```bash
+docker compose up --build
+```
+
+> Make sure Ollama is already running on your machine before using Docker.  
+> The compose file uses `host.docker.internal` to connect to your local Ollama.
+
+---
+
+## Model options
+
+| Model      | Size   | Speed (100k words) | Quality | RAM Needed |
+|------------|--------|--------------------|---------|------------|
+| phi3       | 2.3 GB | ~8 min             | ★★★☆☆  | 4 GB       |
+| gemma2:2b  | 1.6 GB | ~6 min             | ★★★☆☆  | 4 GB       |
+| mistral    | 4.1 GB | ~15 min            | ★★★★☆  | 8 GB       |
+| llama3     | 4.7 GB | ~18 min            | ★★★★★  | 8 GB       |
+
+To switch models, change this line in `backend/main.py`:
+```python
+MODEL_NAME = os.getenv("OLLAMA_MODEL", "gemma2:2b")
+```
+
+**GPU**: If you have an NVIDIA GPU, Ollama uses it automatically — 100k words drops to ~3 min.
+
+---
+
+## API
+
+### `POST /api/check/stream` — Analyze text (SSE streaming)
 ```bash
 curl -N -X POST http://localhost:8000/api/check/stream \
   -H "Content-Type: application/json" \
-  -d '{"text": "Your document text here...", "sensitivity": 25}'
+  -d '{"text": "Your document here...", "sensitivity": 25}'
 ```
 
-SSE events emitted:
+SSE events:
 ```json
-{"type": "start", "check_id": "...", "total_chunks": 50, "word_count": 100000}
-{"type": "progress", "chunk": 1, "total": 50, "pct": 2, "message": "Analyzing chunk 1 of 50..."}
+{"type": "start",    "total_chunks": 50, "word_count": 100000}
+{"type": "progress", "chunk": 1, "total": 50, "pct": 2, "message": "Analyzing section 1 of 50..."}
 {"type": "complete", "result": {...}, "pct": 100}
 ```
 
-### POST `/api/check/start` — Async Background Check
-```bash
-curl -X POST http://localhost:8000/api/check/start \
-  -H "Content-Type: application/json" \
-  -d '{"text": "...", "title": "My Essay"}'
-# Returns: {"check_id": "uuid", "estimated_seconds": 200}
-```
-
-### GET `/api/check/{id}/status` — Poll Status
-```bash
-curl http://localhost:8000/api/check/{check_id}/status
-```
-
-### GET `/api/check/{id}/result` — Get Full Result
-```bash
-curl http://localhost:8000/api/check/{check_id}/result
-```
-
-### POST `/api/upload` — Upload File
+### `POST /api/upload` — Upload a file
 ```bash
 curl -X POST http://localhost:8000/api/upload \
   -F "file=@my-essay.pdf"
 ```
 
-### GET `/api/stats` — Platform Statistics
+### `GET /health` — Check status
 ```bash
-curl http://localhost:8000/api/stats
+curl http://localhost:8000/health
 ```
 
 ---
 
-## Result Schema
+## Result schema
 
 ```json
 {
-  "check_id": "uuid",
-  "originality_score": 78,
-  "plagiarism_percentage": 22.5,
-  "verdict": "Some Concerns",
-  "verdict_color": "yellow",
-  "word_count": 102400,
-  "sources_found": 3,
-  "flagged_phrases": 12,
-  "chunks_analyzed": 51,
-  "analysis_method": "hybrid_minhash_llm",
+  "originality_score":     87,
+  "plagiarism_percentage": 13.0,
+  "verdict":               "Mostly Original",
+  "verdict_color":         "teal",
+  "word_count":            12400,
+  "sources_found":         2,
+  "flagged_phrases":       4,
+  "chunks_analyzed":       7,
+  "analysis_method":       "hybrid_minhash_llm",
   "sources": [
     {
-      "title": "Wikipedia — Related Article",
-      "url": "https://en.wikipedia.org/...",
-      "type": "web",
+      "title":      "Wikipedia — Related Article",
+      "url":        "https://en.wikipedia.org",
+      "type":       "web",
       "similarity": 8.5
     }
   ],
   "highlighted_passages": [
     {
-      "text": "...",
-      "source": "formal_language_cluster",
+      "text":     "...",
+      "source":   "Formal language cluster detected",
       "severity": "medium"
     }
   ],
   "suggestions": [
     {"type": "warning", "text": "Add citations for borrowed facts."},
-    {"type": "ok", "text": "Overall originality is good."}
+    {"type": "ok",      "text": "Overall originality is good."}
   ],
-  "summary": "This 102,400-word document..."
+  "summary": "This 12,400-word document shows strong originality..."
 }
 ```
 
 ---
 
-## Model Comparison
+## Tech stack
 
-| Model    | Size  | Speed (100k words) | Quality | RAM Required |
-|----------|-------|--------------------|---------|--------------|
-| phi3     | 2.3GB | ~8 min             | ★★★☆☆   | 4GB          |
-| mistral  | 4.1GB | ~15 min            | ★★★★☆   | 8GB          |
-| llama3   | 4.7GB | ~18 min            | ★★★★★   | 8GB          |
-| gemma2   | 5.4GB | ~20 min            | ★★★★☆   | 12GB         |
-
-**GPU acceleration**: If you have an NVIDIA GPU, Ollama uses it automatically. 100k words takes ~3-4 minutes with a GPU.
+| Layer     | Technology                          |
+|-----------|-------------------------------------|
+| Frontend  | React 18, Vite, SSE streaming       |
+| Backend   | Python 3.11, FastAPI                |
+| AI Engine | Ollama (local), gemma2:2b           |
+| Algorithm | MinHash fingerprinting, Jaccard similarity |
+| Fallback  | Bigram repetition, TTR, heuristics  |
+| Files     | PyPDF2 (.pdf), python-docx (.docx)  |
 
 ---
 
-## Scaling for SaaS
+## Project structure
 
-### Add Authentication
-```python
-# Add to main.py
-from fastapi_users import FastAPIUsers
-# See: https://fastapi-users.github.io/
+```
+plagcheck/
+├── backend/
+│   ├── main.py              # FastAPI app — all analysis logic
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx          # Full React UI
+│   │   └── main.jsx
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
+├── docker-compose.yml
+├── .gitignore
+└── README.md
 ```
 
-### Add a Job Queue (for high volume)
-```python
-# Replace background_tasks with Celery + Redis
-# celery -A tasks worker --loglevel=info
-```
+---
 
-### PostgreSQL (instead of SQLite)
-```python
-# Change DB_PATH to PostgreSQL DSN
-DATABASE_URL=postgresql://user:pass@localhost/plagcheck
-```
+## Contributing
 
-### Rate Limiting
-```python
-from slowapi import Limiter
-limiter = Limiter(key_func=get_remote_address)
-@app.post("/api/check/stream")
-@limiter.limit("10/hour")
-async def stream_check(...): ...
-```
+Pull requests are welcome. If you're a student who found this useful, a ⭐ on the repo goes a long way.
 
 ---
 
 ## License
-MIT — free to use, modify, and deploy commercially.
+
+MIT — free to use, modify, and share.
