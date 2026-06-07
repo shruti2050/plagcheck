@@ -193,29 +193,37 @@ def heuristic_score(chunk: dict) -> dict:
     words     = text.lower().split()
     sentences = extract_sentences(text)
 
-    # Bigram repetition
-    bigrams = [f"{words[i]} {words[i+1]}" for i in range(len(words) - 1)]
-    freq    = defaultdict(int)
-    for b in bigrams:
-        freq[b] += 1
-    repeated = sum(1 for f in freq.values() if f > 2)
-    rep_score = min(repeated / max(len(bigrams) * 0.1, 1), 1.0)
+    # Bigram repetition — needs enough words to be meaningful
+    if len(words) < 100:
+        rep_score = 0.0
+    else:
+        bigrams = [f"{words[i]} {words[i+1]}" for i in range(len(words) - 1)]
+        freq    = defaultdict(int)
+        for b in bigrams:
+            freq[b] += 1
+        repeated  = sum(1 for f in freq.values() if f > 2)
+        rep_score = min(repeated / max(len(bigrams) * 0.1, 1), 1.0)
 
-    # Type-Token Ratio
-    ttr       = len(set(words)) / max(len(words), 1)
-    vocab_flag = ttr < 0.45
+    # Type-Token Ratio — short texts naturally score high, lower threshold
+    ttr        = len(set(words)) / max(len(words), 1)
+    ttr_thresh = 0.30 if len(words) < 300 else 0.45
+    vocab_flag = ttr < ttr_thresh
 
-    # Sentence length
-    avg_sent = sum(len(s.split()) for s in sentences) / max(len(sentences), 1)
-    long_flag = avg_sent > 35
+    # Sentence length — only meaningful with 3+ sentences
+    avg_sent  = sum(len(s.split()) for s in sentences) / max(len(sentences), 1)
+    long_flag = avg_sent > 35 and len(sentences) >= 3
 
     score = rep_score * 0.4 + (0.3 if vocab_flag else 0) + (0.3 if long_flag else 0)
 
+    # Dampen score for short docs — stats unreliable below 300 words
+    if len(words) < 300:
+        score = score * (len(words) / 300)
+
     return {
-        "chunk_index":     chunk["index"],
+        "chunk_index":      chunk["index"],
         "suspicious_score": round(score * 100),
-        "flagged_phrases": detect_flagged_passages(text),
-        "method":          "heuristic",
+        "flagged_phrases":  detect_flagged_passages(text),
+        "method":           "heuristic",
     }
 
 # ─────────────────────────────────────────────────────────────
