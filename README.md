@@ -6,7 +6,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)
 ![React](https://img.shields.io/badge/React-18-61DAFB)
 ![Ollama](https://img.shields.io/badge/Ollama-local%20LLM-black)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+
 
 ---
 
@@ -270,9 +270,3 @@ plagcheck/
 ## Contributing
 
 Pull requests are welcome. If you're a student who found this useful, a ⭐ on the repo goes a long way.
-
----
-
-## License
-
-MIT — free to use, modify, and share.
