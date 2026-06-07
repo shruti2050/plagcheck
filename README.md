@@ -9,7 +9,7 @@ Zero API costs. No data sent to third parties. Scales to 200,000+ words per docu
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        PlagCheck SaaS                        │
+│                        PlagCheck                            │
 ├──────────────────────┬──────────────────────────────────────┤
 │   React Frontend     │        FastAPI Backend               │
 │   (Vite + React 18)  │        (Python 3.11)                │
