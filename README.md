@@ -1,4 +1,4 @@
-# PlagCheck SaaS — Free Plagiarism Checker (100,000+ Words)
+# PlagCheck  — Free Plagiarism Checker (100,000+ Words)
 
 A production-ready plagiarism detection platform powered entirely by **local open-source AI**.
 Zero API costs. No data sent to third parties. Scales to 200,000+ words per document.
